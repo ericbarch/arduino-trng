@@ -1,10 +1,30 @@
 #!/usr/bin/env python
 
 import time
+import httplib, urllib
 import RPi.GPIO as GPIO
 
 waitUntil = time.time() + 1
 events = []
+
+def upload():
+    cpm = str(float(len(events))/float(5))
+    params = urllib.urlencode({'field1': cpm})
+    headers = {
+	"X-THINGSPEAKAPIKEY": "YOUR-CHANNEL-KEY",
+	"Content-Type": "application/x-www-form-urlencoded",
+	"Content-Length": str(len(params))
+    }
+    conn = httplib.HTTPConnection("api.thingspeak.com")
+    conn.request("POST", "/update", params, headers)
+    response = conn.getresponse()
+    if response.status == 200:
+        print 'upload'
+    else:
+	print 'upload fail'
+    data = response.read()
+    conn.close()
+
 
 def radiationEventHandler (pin):
     if time.time() >= waitUntil:
@@ -19,7 +39,6 @@ def noiseEventHandler (pin):
 		events.remove(event)
             except:
 		pass
-
 
 # main function
 def main():
@@ -38,6 +57,9 @@ def main():
     GPIO.add_event_detect(18, GPIO.FALLING)
     GPIO.add_event_callback(18, noiseEventHandler)
 
+    # wait 5 mins before posting to thingspeak (data needs to stabilize)
+    loops = -270
+
     # sleepy time
     while True:
         time.sleep(1)
@@ -45,6 +67,10 @@ def main():
 		if event < time.time() - 300:
 			events.remove(event)
 	print "cpm: " + str(float(len(events))/float(5))
+	loops = loops + 1
+	if (loops > 30):
+		loops = 0
+		upload()
 
     # done
     GPIO.cleanup()
