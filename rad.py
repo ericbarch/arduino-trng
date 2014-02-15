@@ -11,7 +11,7 @@ def upload():
     cpm = str(float(len(events))/float(5))
     params = urllib.urlencode({'field1': cpm})
     headers = {
-	"X-THINGSPEAKAPIKEY": "YOUR-CHANNEL-KEY",
+	"X-THINGSPEAKAPIKEY": "YOUR_API_KEY",
 	"Content-Type": "application/x-www-form-urlencoded",
 	"Content-Length": str(len(params))
     }
@@ -70,7 +70,10 @@ def main():
 	loops = loops + 1
 	if (loops > 30):
 		loops = 0
-		upload()
+		try:
+			upload()
+		except:
+			pass
 
     # done
     GPIO.cleanup()
